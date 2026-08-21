@@ -1,8 +1,7 @@
 name = "rsp-smart-clinik-db-test"
-main = "src/entry.py"
+main = "src/index.js"
 
 compatibility_date = "2026-08-21"
-compatibility_flags = ["python_workers"]
 
 [[d1_databases]]
 binding = "DB"
