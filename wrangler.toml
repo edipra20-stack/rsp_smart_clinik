@@ -1,0 +1,10 @@
+name = "rsp-smart-clinik-db-test"
+main = "src/entry.py"
+
+compatibility_date = "2026-08-21"
+compatibility_flags = ["python_workers"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rsp-smart-clinic-db"
+database_id = "d357e367-9c63-4ecc-ac77-329d495617f1"
