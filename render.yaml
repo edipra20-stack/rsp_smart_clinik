@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: rsp-smart-clinic
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ADMIN_USER
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: RSP_BUILD
+        value: "74"
+      - key: DB_FILE
+        value: /app/data/rsp_smart_clinic.db

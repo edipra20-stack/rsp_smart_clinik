@@ -1,0 +1,9 @@
+{
+  "name": "RSP SMART CLINIC",
+  "short_name": "RSP SMART CLINIC",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5faf7",
+  "theme_color": "#087f45",
+  "lang": "id"
+}
