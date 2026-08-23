@@ -1,4 +1,4 @@
-const ITERATIONS = 210000;
+const ITERATIONS = 100000;
 const KEY_LENGTH = 256;
 
 function json(data, status = 200, extraHeaders = {}) {
