@@ -14,6 +14,7 @@ function json(data, status = 200, extraHeaders = {}) {
 
 function getCorsHeaders(request) {
   const origin = request.headers.get("Origin") || "";
+
   const allowedOrigins = [
     "https://rsp-smart-clinik.edipra20.workers.dev"
   ];
@@ -21,7 +22,7 @@ function getCorsHeaders(request) {
   const headers = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers":
-      "Content-Type, Authorization",
+      "Content-Type, Authorization, X-Admin-Setup-Token",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   };
@@ -67,7 +68,10 @@ function secureRandomBytes(length) {
 }
 
 function constantTimeEqualText(a, b) {
-  if (typeof a !== "string" || typeof b !== "string") {
+  if (
+    typeof a !== "string" ||
+    typeof b !== "string"
+  ) {
     return false;
   }
 
@@ -78,7 +82,9 @@ function constantTimeEqualText(a, b) {
   let result = 0;
 
   for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    result |=
+      a.charCodeAt(i) ^
+      b.charCodeAt(i);
   }
 
   return result === 0;
@@ -99,30 +105,41 @@ function equalBytes(a, b) {
 }
 
 /*
- * BUILD 78C
- * Server-side one-time Admin bootstrap.
+ * =========================================================
+ * BUILD 78D
+ * SERVER-SIDE ADMIN BOOTSTRAP
+ * =========================================================
  *
- * Username/password TIDAK berasal dari browser.
- * Keduanya diambil dari Cloudflare Secrets:
- *
+ * Username:
  * ADMIN_INITIAL_USER
+ *
+ * Password:
  * ADMIN_INITIAL_PASSWORD
  *
- * Bootstrap hanya bekerja jika auth_config masih kosong.
+ * Token:
+ * ADMIN_SETUP_TOKEN
+ *
+ * Semua diambil dari Cloudflare Secrets.
  */
+
 async function bootstrapAdmin(env) {
-  if (!env.ADMIN_INITIAL_USER || !env.ADMIN_INITIAL_PASSWORD) {
+  if (
+    !env.ADMIN_INITIAL_USER ||
+    !env.ADMIN_INITIAL_PASSWORD
+  ) {
     return {
       ok: false,
-      reason: "INITIAL_ADMIN_SECRET_MISSING"
+      reason:
+        "INITIAL_ADMIN_SECRET_MISSING"
     };
   }
 
-  const existing = await env.DB
-    .prepare(
-      "SELECT id FROM auth_config WHERE id = 1"
-    )
-    .first();
+  const existing =
+    await env.DB
+      .prepare(
+        "SELECT id FROM auth_config WHERE id = 1"
+      )
+      .first();
 
   if (existing) {
     return {
@@ -133,35 +150,40 @@ async function bootstrapAdmin(env) {
   }
 
   const username =
-    String(env.ADMIN_INITIAL_USER).trim();
+    String(
+      env.ADMIN_INITIAL_USER
+    ).trim();
 
   const password =
-    String(env.ADMIN_INITIAL_PASSWORD);
+    String(
+      env.ADMIN_INITIAL_PASSWORD
+    );
 
   if (!username || !password) {
     return {
       ok: false,
-      reason: "INITIAL_ADMIN_SECRET_EMPTY"
+      reason:
+        "INITIAL_ADMIN_SECRET_EMPTY"
     };
   }
 
   if (password.length < 8) {
     return {
       ok: false,
-      reason: "INITIAL_ADMIN_PASSWORD_TOO_SHORT"
+      reason:
+        "INITIAL_ADMIN_PASSWORD_TOO_SHORT"
     };
   }
 
-  const salt = secureRandomBytes(16);
+  const salt =
+    secureRandomBytes(16);
 
   const passwordHash =
-    await pbkdf2(password, salt);
+    await pbkdf2(
+      password,
+      salt
+    );
 
-  /*
-   * INSERT OR IGNORE digunakan untuk mencegah
-   * dua request pertama membuat dua akun
-   * apabila datang hampir bersamaan.
-   */
   await env.DB
     .prepare(`
       INSERT OR IGNORE INTO auth_config
@@ -188,11 +210,12 @@ async function bootstrapAdmin(env) {
     )
     .run();
 
-  const created = await env.DB
-    .prepare(
-      "SELECT id FROM auth_config WHERE id = 1"
-    )
-    .first();
+  const created =
+    await env.DB
+      .prepare(
+        "SELECT id FROM auth_config WHERE id = 1"
+      )
+      .first();
 
   return {
     ok: !!created,
@@ -201,17 +224,34 @@ async function bootstrapAdmin(env) {
   };
 }
 
-async function verifyPassword(username, password, env) {
-  const row = await env.DB
-    .prepare(
-      "SELECT username, salt, password_hash FROM auth_config WHERE id = 1"
-    )
-    .first();
+/*
+ * =========================================================
+ * PASSWORD VERIFICATION
+ * =========================================================
+ */
+
+async function verifyPassword(
+  username,
+  password,
+  env
+) {
+  const row =
+    await env.DB
+      .prepare(`
+        SELECT
+          username,
+          salt,
+          password_hash
+        FROM auth_config
+        WHERE id = 1
+      `)
+      .first();
 
   if (!row) {
     return {
       ok: false,
-      reason: "AUTH_NOT_INITIALIZED"
+      reason:
+        "AUTH_NOT_INITIALIZED"
     };
   }
 
@@ -223,13 +263,18 @@ async function verifyPassword(username, password, env) {
   ) {
     return {
       ok: false,
-      reason: "INVALID_CREDENTIALS"
+      reason:
+        "INVALID_CREDENTIALS"
     };
   }
 
-  const salt = new Uint8Array(row.salt);
+  const salt =
+    new Uint8Array(row.salt);
+
   const storedHash =
-    new Uint8Array(row.password_hash);
+    new Uint8Array(
+      row.password_hash
+    );
 
   const calculatedHash =
     await pbkdf2(
@@ -237,44 +282,67 @@ async function verifyPassword(username, password, env) {
       salt
     );
 
-  if (!equalBytes(
-    calculatedHash,
-    storedHash
-  )) {
+  if (
+    !equalBytes(
+      calculatedHash,
+      storedHash
+    )
+  ) {
     return {
       ok: false,
-      reason: "INVALID_CREDENTIALS"
+      reason:
+        "INVALID_CREDENTIALS"
     };
   }
 
   return {
     ok: true,
-    username: row.username
+    username:
+      row.username
   };
 }
 
-async function handleLogin(request, env) {
+/*
+ * =========================================================
+ * LOGIN
+ * =========================================================
+ */
+
+async function handleLogin(
+  request,
+  env
+) {
   let body;
 
   try {
-    body = await request.json();
+    body =
+      await request.json();
   } catch {
     return json({
       ok: false,
-      error: "Format permintaan tidak valid."
+      error:
+        "Format permintaan tidak valid."
     }, 400);
   }
 
   const username =
-    String(body.username || "").trim();
+    String(
+      body.username || ""
+    ).trim();
 
   const password =
-    String(body.password || "");
+    String(
+      body.password || ""
+    );
 
-  if (!username || !password) {
+  if (
+    !username ||
+    !password
+  ) {
     return json({
       ok: false,
-      error: "Username dan password wajib diisi."
+      error:
+        "Username dan password wajib diisi."
     }, 400);
   }
 
@@ -286,6 +354,7 @@ async function handleLogin(request, env) {
     );
 
   if (!result.ok) {
+
     if (
       result.reason ===
       "AUTH_NOT_INITIALIZED"
@@ -306,184 +375,233 @@ async function handleLogin(request, env) {
 
   return json({
     ok: true,
-    build: "78C",
-    username: result.username,
-    message: "Login berhasil."
+    build: "78D",
+    username:
+      result.username,
+    message:
+      "Login berhasil."
   });
+}
+
+/*
+ * =========================================================
+ * ADMIN BOOTSTRAP PAGE
+ * =========================================================
+ */
 
 function adminBootstrapPage() {
   return `<!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RSP SMART CLINIC - Admin Setup</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 40px 20px;
-    }
+<meta charset="UTF-8">
 
-    .box {
-      max-width: 460px;
-      margin: auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.08);
-    }
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
 
-    h1 {
-      margin-top: 0;
-      font-size: 22px;
-    }
+<title>
+RSP SMART CLINIC - Admin Setup
+</title>
 
-    p {
-      color: #555;
-      line-height: 1.5;
-    }
+<style>
 
-    label {
-      display: block;
-      margin-top: 18px;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 40px 20px;
+}
 
-    input {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 7px;
-      font-size: 15px;
-    }
+.box {
+  max-width: 460px;
+  margin: auto;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,.08);
+}
 
-    button {
-      width: 100%;
-      margin-top: 22px;
-      padding: 13px;
-      border: 0;
-      border-radius: 8px;
-      background: #2563eb;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
+h1 {
+  margin-top: 0;
+  font-size: 22px;
+}
 
-    button:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
+p {
+  color: #555;
+  line-height: 1.5;
+}
 
-    #result {
-      display: none;
-      margin-top: 20px;
-      padding: 12px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-    }
+label {
+  display: block;
+  margin-top: 18px;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
 
-    .ok {
-      background: #dcfce7;
-      color: #166534;
-    }
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  font-size: 15px;
+}
 
-    .error {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-  </style>
+button {
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+#result {
+  display: none;
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
+.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+</style>
+
 </head>
 
 <body>
 
-  <div class="box">
+<div class="box">
 
-    <h1>RSP SMART CLINIC</h1>
+<h1>
+RSP SMART CLINIC
+</h1>
 
-    <p>
-      Inisialisasi Admin Online satu kali.
-    </p>
+<p>
+Inisialisasi Admin Online satu kali.
+</p>
 
-    <p>
-      Username dan password diambil langsung
-      dari Cloudflare Secret.
-    </p>
+<p>
+Username dan password diambil langsung
+dari Cloudflare Secret.
+</p>
 
-    <label for="token">
-      Token Setup
-    </label>
+<label for="token">
+Token Setup
+</label>
 
-    <input
-      id="token"
-      type="password"
-      autocomplete="off"
-      placeholder="Masukkan ADMIN_SETUP_TOKEN"
-    >
+<input
+  id="token"
+  type="password"
+  autocomplete="off"
+  placeholder="Masukkan ADMIN_SETUP_TOKEN"
+>
 
-    <button
-      id="btn"
-      onclick="bootstrap()"
-    >
-      Buat Admin Online
-    </button>
+<button
+  id="btn"
+  onclick="bootstrap()"
+>
+Buat Admin Online
+</button>
 
-    <div id="result"></div>
+<div id="result"></div>
 
-  </div>
+</div>
 
 <script>
+
 async function bootstrap() {
 
   const token =
-    document.getElementById("token").value.trim();
+    document
+      .getElementById("token")
+      .value
+      .trim();
 
   const btn =
-    document.getElementById("btn");
+    document
+      .getElementById("btn");
 
   const result =
-    document.getElementById("result");
+    document
+      .getElementById("result");
 
   if (!token) {
-    result.style.display = "block";
-    result.className = "error";
+
+    result.style.display =
+      "block";
+
+    result.className =
+      "error";
+
     result.textContent =
       "Token Setup wajib diisi.";
+
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = "Memproses...";
 
-  result.style.display = "block";
-  result.className = "";
+  btn.textContent =
+    "Memproses...";
+
+  result.style.display =
+    "block";
+
+  result.className =
+    "";
+
   result.textContent =
     "Membuat Admin Online...";
 
   try {
 
-    const response = await fetch(
-      "/api/admin/bootstrap",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Setup-Token": token
-        },
-        body: "{}"
-      }
-    );
+    const response =
+      await fetch(
+        "/api/admin/bootstrap",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "X-Admin-Setup-Token":
+              token
+          },
+
+          body: "{}"
+        }
+      );
 
     const data =
       await response.json();
 
     if (data.ok) {
 
-      result.className = "ok";
+      result.className =
+        "ok";
 
       if (data.created) {
 
@@ -498,89 +616,139 @@ async function bootstrap() {
           "Tidak ada perubahan dilakukan.";
       }
 
-      document.getElementById("token").value = "";
+      document
+        .getElementById("token")
+        .value = "";
 
-      btn.textContent = "Selesai";
+      btn.textContent =
+        "Selesai";
+
       return;
     }
 
-    result.className = "error";
+    result.className =
+      "error";
 
     result.textContent =
       data.error ||
       "Bootstrap gagal.";
 
-    btn.disabled = false;
-    btn.textContent = "Coba Lagi";
+    btn.disabled =
+      false;
+
+    btn.textContent =
+      "Coba Lagi";
 
   } catch (error) {
 
-    result.className = "error";
+    result.className =
+      "error";
 
     result.textContent =
       "Tidak dapat terhubung ke server.\\n\\n" +
       String(error);
 
-    btn.disabled = false;
-    btn.textContent = "Coba Lagi";
+    btn.disabled =
+      false;
+
+    btn.textContent =
+      "Coba Lagi";
   }
 }
+
 </script>
 
 </body>
+
 </html>`;
 }
 
+/*
+ * =========================================================
+ * WORKER
+ * =========================================================
+ */
+
 export default {
-  async fetch(request, env) {
+
+  async fetch(
+    request,
+    env
+  ) {
 
     const cors =
-      getCorsHeaders(request);
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: cors
-      });
-    }
-
-    const url =
-      new URL(request.url);
+      getCorsHeaders(
+        request
+      );
 
     /*
-     * =================================================
-     * ADMIN BOOTSTRAP PAGE
-     * =================================================
+     * =====================================================
+     * CORS PREFLIGHT
+     * =====================================================
      */
+
     if (
-      url.pathname === "/admin-bootstrap" &&
-      request.method === "GET"
+      request.method ===
+      "OPTIONS"
     ) {
       return new Response(
-        adminBootstrapPage(),
+        null,
         {
-          status: 200,
-          headers: {
-            "Content-Type":
-              "text/html; charset=utf-8",
-            "Cache-Control":
-              "no-store"
-          }
+          status: 204,
+          headers: cors
         }
       );
     }
 
+    const url =
+      new URL(
+        request.url
+      );
+
     try {
 
       /*
-       * =================================================
-       * HEALTH
-       * =================================================
+       * ===================================================
+       * ADMIN BOOTSTRAP PAGE
+       * ===================================================
        */
+
       if (
-        url.pathname === "/api/health" &&
-        request.method === "GET"
+        url.pathname ===
+          "/admin-bootstrap" &&
+        request.method ===
+          "GET"
       ) {
+
+        return new Response(
+          adminBootstrapPage(),
+          {
+            status: 200,
+
+            headers: {
+              "Content-Type":
+                "text/html; charset=utf-8",
+
+              "Cache-Control":
+                "no-store"
+            }
+          }
+        );
+      }
+
+      /*
+       * ===================================================
+       * HEALTH
+       * ===================================================
+       */
+
+      if (
+        url.pathname ===
+          "/api/health" &&
+        request.method ===
+          "GET"
+      ) {
+
         const row =
           await env.DB
             .prepare(
@@ -591,21 +759,28 @@ export default {
         return json({
           ok: true,
           build: "78D",
-          database: "connected",
+          database:
+            "connected",
           app_state_rows:
-            Number(row.total || 0)
+            Number(
+              row.total || 0
+            )
         }, 200, cors);
       }
 
       /*
-       * =================================================
+       * ===================================================
        * AUTH STATUS
-       * =================================================
+       * ===================================================
        */
+
       if (
-        url.pathname === "/api/auth-status" &&
-        request.method === "GET"
+        url.pathname ===
+          "/api/auth-status" &&
+        request.method ===
+          "GET"
       ) {
+
         const row =
           await env.DB
             .prepare(
@@ -615,20 +790,26 @@ export default {
 
         return json({
           ok: true,
-          initialized: !!row,
+          initialized:
+            !!row,
           username:
-            row ? row.username : null
+            row
+              ? row.username
+              : null
         }, 200, cors);
       }
 
       /*
-       * =================================================
-       * ONE-TIME ADMIN BOOTSTRAP
-       * =================================================
+       * ===================================================
+       * ADMIN BOOTSTRAP API
+       * ===================================================
        */
+
       if (
-        url.pathname === "/api/admin/bootstrap" &&
-        request.method === "POST"
+        url.pathname ===
+          "/api/admin/bootstrap" &&
+        request.method ===
+          "POST"
       ) {
 
         const setupToken =
@@ -636,7 +817,10 @@ export default {
             "X-Admin-Setup-Token"
           ) || "";
 
-        if (!env.ADMIN_SETUP_TOKEN) {
+        if (
+          !env.ADMIN_SETUP_TOKEN
+        ) {
+
           return json({
             ok: false,
             error:
@@ -650,6 +834,7 @@ export default {
             env.ADMIN_SETUP_TOKEN
           )
         ) {
+
           return json({
             ok: false,
             error:
@@ -658,7 +843,9 @@ export default {
         }
 
         const result =
-          await bootstrapAdmin(env);
+          await bootstrapAdmin(
+            env
+          );
 
         if (!result.ok) {
 
@@ -666,6 +853,7 @@ export default {
             result.reason ===
             "INITIAL_ADMIN_SECRET_MISSING"
           ) {
+
             return json({
               ok: false,
               error:
@@ -675,8 +863,21 @@ export default {
 
           if (
             result.reason ===
+            "INITIAL_ADMIN_SECRET_EMPTY"
+          ) {
+
+            return json({
+              ok: false,
+              error:
+                "ADMIN_INITIAL_USER atau ADMIN_INITIAL_PASSWORD kosong."
+            }, 500, cors);
+          }
+
+          if (
+            result.reason ===
             "INITIAL_ADMIN_PASSWORD_TOO_SHORT"
           ) {
+
             return json({
               ok: false,
               error:
@@ -706,14 +907,18 @@ export default {
       }
 
       /*
-       * =================================================
+       * ===================================================
        * LOGIN
-       * =================================================
+       * ===================================================
        */
+
       if (
-        url.pathname === "/api/login" &&
-        request.method === "POST"
+        url.pathname ===
+          "/api/login" &&
+        request.method ===
+          "POST"
       ) {
+
         return await handleLogin(
           request,
           env
@@ -721,14 +926,18 @@ export default {
       }
 
       /*
-       * =================================================
+       * ===================================================
        * DB STATUS
-       * =================================================
+       * ===================================================
        */
+
       if (
-        url.pathname === "/api/db-status" &&
-        request.method === "GET"
+        url.pathname ===
+          "/api/db-status" &&
+        request.method ===
+          "GET"
       ) {
+
         const tables =
           await env.DB
             .prepare(`
@@ -748,14 +957,18 @@ export default {
       }
 
       /*
-       * =================================================
+       * ===================================================
        * PUBLIC SETTINGS
-       * =================================================
+       * ===================================================
        */
+
       if (
-        url.pathname === "/api/public-settings" &&
-        request.method === "GET"
+        url.pathname ===
+          "/api/public-settings" &&
+        request.method ===
+          "GET"
       ) {
+
         const row =
           await env.DB
             .prepare(
@@ -769,42 +982,62 @@ export default {
           row &&
           row.data
         ) {
+
           try {
+
             settings =
-              JSON.parse(row.data);
+              JSON.parse(
+                row.data
+              );
+
           } catch {
+
             settings = {};
           }
         }
 
         return json({
           ok: true,
+
           clinicName:
             settings.clinicName ||
             "RSP SMART CLINIC",
+
           tagline:
-            settings.tagline || "",
+            settings.tagline ||
+            "",
+
           address:
-            settings.address || "",
+            settings.address ||
+            "",
+
           phone:
-            settings.phone || "",
+            settings.phone ||
+            "",
+
           whatsapp:
-            settings.whatsapp || "",
+            settings.whatsapp ||
+            "",
+
           publicBaseUrl:
-            settings.publicBaseUrl || ""
+            settings.publicBaseUrl ||
+            ""
         }, 200, cors);
       }
 
       /*
-       * =================================================
+       * ===================================================
        * REGISTRATION COUNT
-       * =================================================
+       * ===================================================
        */
+
       if (
         url.pathname ===
           "/api/registration-count" &&
-        request.method === "GET"
+        request.method ===
+          "GET"
       ) {
+
         const row =
           await env.DB
             .prepare(
@@ -815,15 +1048,18 @@ export default {
         return json({
           ok: true,
           total:
-            Number(row.total || 0)
+            Number(
+              row.total || 0
+            )
         }, 200, cors);
       }
 
       /*
-       * =================================================
-       * ENDPOINT TIDAK DITEMUKAN
-       * =================================================
+       * ===================================================
+       * NOT FOUND
+       * ===================================================
        */
+
       return json({
         ok: false,
         error:
@@ -837,320 +1073,6 @@ export default {
       return json({
         ok: false,
         build: "78D",
-        error:
-          String(error)
-      }, 500, cors);
-    }
-  }
-};
-export default {
-  async fetch(request, env) {
-    const cors =
-      getCorsHeaders(request);
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: cors
-      });
-    }
-  if (
-  url.pathname === "/admin-bootstrap" &&
-  request.method === "GET"
-) {
-  return new Response(
-    adminBootstrapPage(),
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store"
-      }
-    }
-  );
-}
-
-    const url =
-      new URL(request.url);
-if (
-  url.pathname === "/admin-bootstrap" &&
-  request.method === "GET"
-) {
-  return new Response(
-    adminBootstrapPage(),
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store"
-      }
-    }
-  );
-}
-    try {
-
-      /*
-       * =================================================
-       * HEALTH
-       * =================================================
-       */
-      if (
-        url.pathname === "/api/health" &&
-        request.method === "GET"
-      ) {
-        const row =
-          await env.DB
-            .prepare(
-              "SELECT COUNT(*) AS total FROM app_state"
-            )
-            .first();
-
-        return json({
-          ok: true,
-          build: "78C",
-          database: "connected",
-          app_state_rows:
-            Number(row.total || 0)
-        }, 200, cors);
-      }
-
-      /*
-       * =================================================
-       * AUTH STATUS
-       * =================================================
-       */
-      if (
-        url.pathname === "/api/auth-status" &&
-        request.method === "GET"
-      ) {
-        const row =
-          await env.DB
-            .prepare(
-              "SELECT username FROM auth_config WHERE id = 1"
-            )
-            .first();
-
-        return json({
-          ok: true,
-          initialized: !!row,
-          username:
-            row ? row.username : null
-        }, 200, cors);
-      }
-
-      /*
-       * =================================================
-       * ONE-TIME SERVER-SIDE BOOTSTRAP
-       *
-       * Tidak menerima password.
-       * Tidak menerima username.
-       * Mengambil keduanya dari Cloudflare Secrets.
-       *
-       * Endpoint ini aman dipanggil berulang.
-       * Setelah auth_config terisi, tidak ada akun
-       * baru yang dibuat.
-       * =================================================
-       */
-      if (
-  url.pathname === "/api/admin/bootstrap" &&
-  request.method === "POST"
-) {
-  const setupToken =
-    request.headers.get("X-Admin-Setup-Token") || "";
-
-  if (!env.ADMIN_SETUP_TOKEN) {
-    return json({
-      ok: false,
-      error:
-        "ADMIN_SETUP_TOKEN belum dikonfigurasi."
-    }, 500, cors);
-  }
-
-  if (
-    !constantTimeEqualText(
-      setupToken,
-      env.ADMIN_SETUP_TOKEN
-    )
-  ) {
-    return json({
-      ok: false,
-      error:
-        "Token Setup tidak valid."
-    }, 403, cors);
-  }
-
-  const result =
-    await bootstrapAdmin(env);
-        if (!result.ok) {
-          if (
-            result.reason ===
-            "INITIAL_ADMIN_SECRET_MISSING"
-          ) {
-            return json({
-              ok: false,
-              error:
-                "ADMIN_INITIAL_USER atau ADMIN_INITIAL_PASSWORD belum tersedia."
-            }, 500, cors);
-          }
-
-          if (
-            result.reason ===
-            "INITIAL_ADMIN_PASSWORD_TOO_SHORT"
-          ) {
-            return json({
-              ok: false,
-              error:
-                "ADMIN_INITIAL_PASSWORD minimal 8 karakter."
-            }, 500, cors);
-          }
-
-          return json({
-            ok: false,
-            error:
-              "Bootstrap Admin gagal."
-          }, 500, cors);
-        }
-
-        return json({
-          ok: true,
-          build: "78C",
-          initialized:
-            result.initialized,
-          created:
-            result.created,
-          message:
-            result.created
-              ? "Admin Online berhasil dibuat."
-              : "Admin Online sudah tersedia."
-        }, 200, cors);
-      }
-
-      /*
-       * =================================================
-       * LOGIN
-       * =================================================
-       */
-      if (
-        url.pathname === "/api/login" &&
-        request.method === "POST"
-      ) {
-        return await handleLogin(
-          request,
-          env
-        );
-      }
-
-      /*
-       * =================================================
-       * DB STATUS
-       * =================================================
-       */
-      if (
-        url.pathname === "/api/db-status" &&
-        request.method === "GET"
-      ) {
-        const tables =
-          await env.DB
-            .prepare(`
-              SELECT name
-              FROM sqlite_master
-              WHERE type = 'table'
-              ORDER BY name
-            `)
-            .all();
-
-        return json({
-          ok: true,
-          build: "78C",
-          tables: tables.results
-        }, 200, cors);
-      }
-
-      /*
-       * =================================================
-       * PUBLIC SETTINGS
-       * =================================================
-       */
-      if (
-        url.pathname === "/api/public-settings" &&
-        request.method === "GET"
-      ) {
-        const row =
-          await env.DB
-            .prepare(
-              "SELECT data FROM clinic_settings WHERE id = 1"
-            )
-            .first();
-
-        let settings = {};
-
-        if (
-          row &&
-          row.data
-        ) {
-          try {
-            settings =
-              JSON.parse(row.data);
-          } catch {
-            settings = {};
-          }
-        }
-
-        return json({
-          ok: true,
-          clinicName:
-            settings.clinicName ||
-            "RSP SMART CLINIC",
-          tagline:
-            settings.tagline || "",
-          address:
-            settings.address || "",
-          phone:
-            settings.phone || "",
-          whatsapp:
-            settings.whatsapp || "",
-          publicBaseUrl:
-            settings.publicBaseUrl || ""
-        }, 200, cors);
-      }
-
-      /*
-       * =================================================
-       * REGISTRATION COUNT
-       * =================================================
-       */
-      if (
-        url.pathname ===
-          "/api/registration-count" &&
-        request.method === "GET"
-      ) {
-        const row =
-          await env.DB
-            .prepare(
-              "SELECT COUNT(*) AS total FROM registrations"
-            )
-            .first();
-
-        return json({
-          ok: true,
-          total:
-            Number(row.total || 0)
-        }, 200, cors);
-      }
-
-      return json({
-        ok: false,
-        error:
-          "Endpoint tidak ditemukan.",
-        path:
-          url.pathname
-      }, 404, cors);
-
-    } catch (error) {
-
-      return json({
-        ok: false,
-        build: "78C",
         error:
           String(error)
       }, 500, cors);
