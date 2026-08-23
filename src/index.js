@@ -783,33 +783,32 @@ if (
   url.pathname === "/api/admin/bootstrap" &&
   request.method === "POST"
 ) {
-   const setupToken =
-  request.headers.get("X-Admin-Setup-Token") || "";
+  const setupToken =
+    request.headers.get("X-Admin-Setup-Token") || "";
 
-if (!env.ADMIN_SETUP_TOKEN) {
-  return json({
-    ok: false,
-    error:
-      "ADMIN_SETUP_TOKEN belum dikonfigurasi."
-  }, 500, cors);
-}
+  if (!env.ADMIN_SETUP_TOKEN) {
+    return json({
+      ok: false,
+      error:
+        "ADMIN_SETUP_TOKEN belum dikonfigurasi."
+    }, 500, cors);
+  }
 
-if (
-  !constantTimeEqualText(
-    setupToken,
-    env.ADMIN_SETUP_TOKEN
-  )
-) {
-  return json({
-    ok: false,
-    error:
-      "Token Setup tidak valid."
-  }, 403, cors);
-}
-        ) {
-        const result =
-          await bootstrapAdmin(env);
+  if (
+    !constantTimeEqualText(
+      setupToken,
+      env.ADMIN_SETUP_TOKEN
+    )
+  ) {
+    return json({
+      ok: false,
+      error:
+        "Token Setup tidak valid."
+    }, 403, cors);
+  }
 
+  const result =
+    await bootstrapAdmin(env);
         if (!result.ok) {
           if (
             result.reason ===
