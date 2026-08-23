@@ -311,8 +311,366 @@ async function handleLogin(request, env) {
     username: result.username,
     message: "Login berhasil."
   });
+}function adminBootstrapPage() {
+  return `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RSP SMART CLINIC - Admin Bootstrap</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 40px 20px;
+    }
+
+    .box {
+      max-width: 480px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 22px;
+    }
+
+    p {
+      color: #555;
+      line-height: 1.5;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+      white-space: pre-wrap;
+    }
+
+    .ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h1>RSP SMART CLINIC</h1>
+
+    <p>
+      Inisialisasi Admin Online satu kali.
+      Username dan password diambil langsung
+      dari Cloudflare Secret.
+    </p>
+
+    <p>
+      Password tidak ditampilkan dan tidak
+      dikirim dari halaman ini.
+    </p>
+
+    <button id="btn" onclick="bootstrap()">
+      Buat Admin Online
+    </button>
+
+    <div id="result"></div>
+  </div>
+
+<script>
+async function bootstrap() {
+  const btn = document.getElementById("btn");
+  const result = document.getElementById("result");
+
+  btn.disabled = true;
+  btn.textContent = "Memproses...";
+
+  result.style.display = "block";
+  result.className = "";
+  result.textContent = "Menginisialisasi Admin Online...";
+
+  try {
+    const response = await fetch("/api/admin/bootstrap", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: "{}"
+    });
+
+    const data = await response.json();
+
+    if (data.ok) {
+      result.className = "ok";
+
+      if (data.created) {
+        result.textContent =
+          "Admin Online berhasil dibuat.\\n\\n" +
+          "Silakan lanjutkan ke halaman login.";
+      } else {
+        result.textContent =
+          "Admin Online sudah tersedia.\\n\\n" +
+          "Bootstrap tidak melakukan perubahan.";
+      }
+
+      btn.textContent = "Selesai";
+      return;
+    }
+
+    result.className = "error";
+    result.textContent =
+      data.error || "Bootstrap gagal.";
+
+    btn.disabled = false;
+    btn.textContent = "Coba Lagi";
+
+  } catch (error) {
+    result.className = "error";
+    result.textContent =
+      "Tidak dapat terhubung ke server.\\n\\n" +
+      String(error);
+
+    btn.disabled = false;
+    btn.textContent = "Coba Lagi";
+  }
+}
+</script>
+
+</body>
+</html>`;
+}
+function adminBootstrapPage() {
+  return `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RSP SMART CLINIC - Admin Setup</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 40px 20px;
 }
 
+.box {
+  max-width: 460px;
+  margin: auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 22px;
+}
+
+label {
+  display: block;
+  margin-top: 18px;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  font-size: 15px;
+}
+
+button {
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+#result {
+  display: none;
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
+.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>RSP SMART CLINIC</h1>
+
+<p>
+Inisialisasi Admin Online satu kali.
+</p>
+
+<label for="token">
+Token Setup
+</label>
+
+<input
+  id="token"
+  type="password"
+  autocomplete="off"
+  placeholder="Masukkan ADMIN_SETUP_TOKEN"
+>
+
+<button id="btn" onclick="bootstrap()">
+Buat Admin Online
+</button>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+async function bootstrap() {
+
+  const token =
+    document.getElementById("token").value.trim();
+
+  const btn =
+    document.getElementById("btn");
+
+  const result =
+    document.getElementById("result");
+
+  if (!token) {
+    result.style.display = "block";
+    result.className = "error";
+    result.textContent =
+      "Token Setup wajib diisi.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Memproses...";
+
+  result.style.display = "block";
+  result.className = "";
+  result.textContent =
+    "Membuat Admin Online...";
+
+  try {
+
+    const response = await fetch(
+      "/api/admin/bootstrap",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Setup-Token": token
+        },
+        body: "{}"
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (data.ok) {
+
+      result.className = "ok";
+
+      if (data.created) {
+
+        result.textContent =
+          "Admin Online berhasil dibuat.\\n\\n" +
+          "Sekarang Anda dapat menggunakan " +
+          "username dan password baru untuk login.";
+
+      } else {
+
+        result.textContent =
+          "Admin Online sudah tersedia.\\n\\n" +
+          "Tidak ada perubahan dilakukan.";
+      }
+
+      document.getElementById("token").value = "";
+
+      btn.textContent = "Selesai";
+      return;
+    }
+
+    result.className = "error";
+    result.textContent =
+      data.error ||
+      "Bootstrap gagal.";
+
+    btn.disabled = false;
+    btn.textContent = "Coba Lagi";
+
+  } catch (error) {
+
+    result.className = "error";
+
+    result.textContent =
+      "Tidak dapat terhubung ke server.\\n\\n" +
+      String(error);
+
+    btn.disabled = false;
+    btn.textContent = "Coba Lagi";
+  }
+}
+</script>
+
+</body>
+</html>`;
+}
 export default {
   async fetch(request, env) {
     const cors =
@@ -324,10 +682,39 @@ export default {
         headers: cors
       });
     }
+  if (
+  url.pathname === "/admin-bootstrap" &&
+  request.method === "GET"
+) {
+  return new Response(
+    adminBootstrapPage(),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store"
+      }
+    }
+  );
+}
 
     const url =
       new URL(request.url);
-
+if (
+  url.pathname === "/admin-bootstrap" &&
+  request.method === "GET"
+) {
+  return new Response(
+    adminBootstrapPage(),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store"
+      }
+    }
+  );
+}
     try {
 
       /*
@@ -393,9 +780,33 @@ export default {
        * =================================================
        */
       if (
-        url.pathname === "/api/admin/bootstrap" &&
-        request.method === "POST"
-      ) {
+  url.pathname === "/api/admin/bootstrap" &&
+  request.method === "POST"
+) {
+   const setupToken =
+  request.headers.get("X-Admin-Setup-Token") || "";
+
+if (!env.ADMIN_SETUP_TOKEN) {
+  return json({
+    ok: false,
+    error:
+      "ADMIN_SETUP_TOKEN belum dikonfigurasi."
+  }, 500, cors);
+}
+
+if (
+  !constantTimeEqualText(
+    setupToken,
+    env.ADMIN_SETUP_TOKEN
+  )
+) {
+  return json({
+    ok: false,
+    error:
+      "Token Setup tidak valid."
+  }, 403, cors);
+}
+        ) {
         const result =
           await bootstrapAdmin(env);
 
