@@ -14,7 +14,6 @@ function json(data, status = 200, extraHeaders = {}) {
 
 function getCorsHeaders(request) {
   const origin = request.headers.get("Origin") || "";
-
   const allowedOrigins = [
     "https://rsp-smart-clinik.edipra20.workers.dev"
   ];
@@ -311,77 +310,6 @@ async function handleLogin(request, env) {
     username: result.username,
     message: "Login berhasil."
   });
-}function adminBootstrapPage() {
-  return `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RSP SMART CLINIC - Admin Bootstrap</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 40px 20px;
-    }
-
-    .box {
-      max-width: 480px;
-      margin: auto;
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.08);
-    }
-
-    h1 {
-      margin-top: 0;
-      font-size: 22px;
-    }
-
-    p {
-      color: #555;
-      line-height: 1.5;
-    }
-
-    button {
-      width: 100%;
-      padding: 13px;
-      border: 0;
-      border-radius: 8px;
-      background: #2563eb;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
-
-    #result {
-      margin-top: 20px;
-      padding: 12px;
-      border-radius: 8px;
-      display: none;
-      white-space: pre-wrap;
-    }
-
-    .ok {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .error {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-  </style>
-</head>
-
-<body>
   <div class="box">
     <h1>RSP SMART CLINIC</h1>
 
@@ -464,118 +392,130 @@ async function bootstrap() {
 
 </body>
 </html>`;
-}
 function adminBootstrapPage() {
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RSP SMART CLINIC - Admin Setup</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RSP SMART CLINIC - Admin Setup</title>
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  margin: 0;
-  padding: 40px 20px;
-}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 40px 20px;
+    }
 
-.box {
-  max-width: 460px;
-  margin: auto;
-  background: #fff;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.08);
-}
+    .box {
+      max-width: 460px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    }
 
-h1 {
-  margin-top: 0;
-  font-size: 22px;
-}
+    h1 {
+      margin-top: 0;
+      font-size: 22px;
+    }
 
-label {
-  display: block;
-  margin-top: 18px;
-  margin-bottom: 6px;
-  font-weight: bold;
-}
+    p {
+      color: #555;
+      line-height: 1.5;
+    }
 
-input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 7px;
-  font-size: 15px;
-}
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
 
-button {
-  width: 100%;
-  margin-top: 22px;
-  padding: 13px;
-  border: 0;
-  border-radius: 8px;
-  background: #2563eb;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      font-size: 15px;
+    }
 
-button:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
+    button {
+      width: 100%;
+      margin-top: 22px;
+      padding: 13px;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-#result {
-  display: none;
-  margin-top: 20px;
-  padding: 12px;
-  border-radius: 8px;
-  white-space: pre-wrap;
-}
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
 
-.ok {
-  background: #dcfce7;
-  color: #166534;
-}
+    #result {
+      display: none;
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
 
-.error {
-  background: #fee2e2;
-  color: #991b1b;
-}
-</style>
+    .ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="box">
+  <div class="box">
 
-<h1>RSP SMART CLINIC</h1>
+    <h1>RSP SMART CLINIC</h1>
 
-<p>
-Inisialisasi Admin Online satu kali.
-</p>
+    <p>
+      Inisialisasi Admin Online satu kali.
+    </p>
 
-<label for="token">
-Token Setup
-</label>
+    <p>
+      Username dan password diambil langsung
+      dari Cloudflare Secret.
+    </p>
 
-<input
-  id="token"
-  type="password"
-  autocomplete="off"
-  placeholder="Masukkan ADMIN_SETUP_TOKEN"
->
+    <label for="token">
+      Token Setup
+    </label>
 
-<button id="btn" onclick="bootstrap()">
-Buat Admin Online
-</button>
+    <input
+      id="token"
+      type="password"
+      autocomplete="off"
+      placeholder="Masukkan ADMIN_SETUP_TOKEN"
+    >
 
-<div id="result"></div>
+    <button
+      id="btn"
+      onclick="bootstrap()"
+    >
+      Buat Admin Online
+    </button>
 
-</div>
+    <div id="result"></div>
+
+  </div>
 
 <script>
 async function bootstrap() {
@@ -630,8 +570,7 @@ async function bootstrap() {
 
         result.textContent =
           "Admin Online berhasil dibuat.\\n\\n" +
-          "Sekarang Anda dapat menggunakan " +
-          "username dan password baru untuk login.";
+          "Silakan lanjutkan ke halaman login.";
 
       } else {
 
@@ -647,6 +586,7 @@ async function bootstrap() {
     }
 
     result.className = "error";
+
     result.textContent =
       data.error ||
       "Bootstrap gagal.";
@@ -671,6 +611,319 @@ async function bootstrap() {
 </body>
 </html>`;
 }
+
+export default {
+  async fetch(request, env) {
+
+    const cors =
+      getCorsHeaders(request);
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: cors
+      });
+    }
+
+    const url =
+      new URL(request.url);
+
+    /*
+     * =================================================
+     * ADMIN BOOTSTRAP PAGE
+     * =================================================
+     */
+    if (
+      url.pathname === "/admin-bootstrap" &&
+      request.method === "GET"
+    ) {
+      return new Response(
+        adminBootstrapPage(),
+        {
+          status: 200,
+          headers: {
+            "Content-Type":
+              "text/html; charset=utf-8",
+            "Cache-Control":
+              "no-store"
+          }
+        }
+      );
+    }
+
+    try {
+
+      /*
+       * =================================================
+       * HEALTH
+       * =================================================
+       */
+      if (
+        url.pathname === "/api/health" &&
+        request.method === "GET"
+      ) {
+        const row =
+          await env.DB
+            .prepare(
+              "SELECT COUNT(*) AS total FROM app_state"
+            )
+            .first();
+
+        return json({
+          ok: true,
+          build: "78D",
+          database: "connected",
+          app_state_rows:
+            Number(row.total || 0)
+        }, 200, cors);
+      }
+
+      /*
+       * =================================================
+       * AUTH STATUS
+       * =================================================
+       */
+      if (
+        url.pathname === "/api/auth-status" &&
+        request.method === "GET"
+      ) {
+        const row =
+          await env.DB
+            .prepare(
+              "SELECT username FROM auth_config WHERE id = 1"
+            )
+            .first();
+
+        return json({
+          ok: true,
+          initialized: !!row,
+          username:
+            row ? row.username : null
+        }, 200, cors);
+      }
+
+      /*
+       * =================================================
+       * ONE-TIME ADMIN BOOTSTRAP
+       * =================================================
+       */
+      if (
+        url.pathname === "/api/admin/bootstrap" &&
+        request.method === "POST"
+      ) {
+
+        const setupToken =
+          request.headers.get(
+            "X-Admin-Setup-Token"
+          ) || "";
+
+        if (!env.ADMIN_SETUP_TOKEN) {
+          return json({
+            ok: false,
+            error:
+              "ADMIN_SETUP_TOKEN belum dikonfigurasi."
+          }, 500, cors);
+        }
+
+        if (
+          !constantTimeEqualText(
+            setupToken,
+            env.ADMIN_SETUP_TOKEN
+          )
+        ) {
+          return json({
+            ok: false,
+            error:
+              "Token Setup tidak valid."
+          }, 403, cors);
+        }
+
+        const result =
+          await bootstrapAdmin(env);
+
+        if (!result.ok) {
+
+          if (
+            result.reason ===
+            "INITIAL_ADMIN_SECRET_MISSING"
+          ) {
+            return json({
+              ok: false,
+              error:
+                "ADMIN_INITIAL_USER atau ADMIN_INITIAL_PASSWORD belum tersedia."
+            }, 500, cors);
+          }
+
+          if (
+            result.reason ===
+            "INITIAL_ADMIN_PASSWORD_TOO_SHORT"
+          ) {
+            return json({
+              ok: false,
+              error:
+                "ADMIN_INITIAL_PASSWORD minimal 8 karakter."
+            }, 500, cors);
+          }
+
+          return json({
+            ok: false,
+            error:
+              "Bootstrap Admin gagal."
+          }, 500, cors);
+        }
+
+        return json({
+          ok: true,
+          build: "78D",
+          initialized:
+            result.initialized,
+          created:
+            result.created,
+          message:
+            result.created
+              ? "Admin Online berhasil dibuat."
+              : "Admin Online sudah tersedia."
+        }, 200, cors);
+      }
+
+      /*
+       * =================================================
+       * LOGIN
+       * =================================================
+       */
+      if (
+        url.pathname === "/api/login" &&
+        request.method === "POST"
+      ) {
+        return await handleLogin(
+          request,
+          env
+        );
+      }
+
+      /*
+       * =================================================
+       * DB STATUS
+       * =================================================
+       */
+      if (
+        url.pathname === "/api/db-status" &&
+        request.method === "GET"
+      ) {
+        const tables =
+          await env.DB
+            .prepare(`
+              SELECT name
+              FROM sqlite_master
+              WHERE type = 'table'
+              ORDER BY name
+            `)
+            .all();
+
+        return json({
+          ok: true,
+          build: "78D",
+          tables:
+            tables.results
+        }, 200, cors);
+      }
+
+      /*
+       * =================================================
+       * PUBLIC SETTINGS
+       * =================================================
+       */
+      if (
+        url.pathname === "/api/public-settings" &&
+        request.method === "GET"
+      ) {
+        const row =
+          await env.DB
+            .prepare(
+              "SELECT data FROM clinic_settings WHERE id = 1"
+            )
+            .first();
+
+        let settings = {};
+
+        if (
+          row &&
+          row.data
+        ) {
+          try {
+            settings =
+              JSON.parse(row.data);
+          } catch {
+            settings = {};
+          }
+        }
+
+        return json({
+          ok: true,
+          clinicName:
+            settings.clinicName ||
+            "RSP SMART CLINIC",
+          tagline:
+            settings.tagline || "",
+          address:
+            settings.address || "",
+          phone:
+            settings.phone || "",
+          whatsapp:
+            settings.whatsapp || "",
+          publicBaseUrl:
+            settings.publicBaseUrl || ""
+        }, 200, cors);
+      }
+
+      /*
+       * =================================================
+       * REGISTRATION COUNT
+       * =================================================
+       */
+      if (
+        url.pathname ===
+          "/api/registration-count" &&
+        request.method === "GET"
+      ) {
+        const row =
+          await env.DB
+            .prepare(
+              "SELECT COUNT(*) AS total FROM registrations"
+            )
+            .first();
+
+        return json({
+          ok: true,
+          total:
+            Number(row.total || 0)
+        }, 200, cors);
+      }
+
+      /*
+       * =================================================
+       * ENDPOINT TIDAK DITEMUKAN
+       * =================================================
+       */
+      return json({
+        ok: false,
+        error:
+          "Endpoint tidak ditemukan.",
+        path:
+          url.pathname
+      }, 404, cors);
+
+    } catch (error) {
+
+      return json({
+        ok: false,
+        build: "78D",
+        error:
+          String(error)
+      }, 500, cors);
+    }
+  }
+};
 export default {
   async fetch(request, env) {
     const cors =
