@@ -122,18 +122,7 @@ function equalBytes(a, b) {
  * Semua diambil dari Cloudflare Secrets.
  */
 
-async function bootstrapAdmin(env) {
-  if (
-    !env.ADMIN_INITIAL_USER ||
-    !env.ADMIN_INITIAL_PASSWORD
-  ) {
-    return {
-      ok: false,
-      reason:
-        "INITIAL_ADMIN_SECRET_MISSING"
-    };
-  }
-
+async function bootstrapAdmin(username, password, env) {
   const existing =
     await env.DB
       .prepare(
@@ -149,15 +138,8 @@ async function bootstrapAdmin(env) {
     };
   }
 
-  const username =
-    String(
-      env.ADMIN_INITIAL_USER
-    ).trim();
-
-  const password =
-    String(
-      env.ADMIN_INITIAL_PASSWORD
-    );
+  username = String(username || "").trim();
+  password = String(password || "");
 
   if (!username || !password) {
     return {
@@ -223,7 +205,6 @@ async function bootstrapAdmin(env) {
     created: !!created
   };
 }
-
 /*
  * =========================================================
  * PASSWORD VERIFICATION
